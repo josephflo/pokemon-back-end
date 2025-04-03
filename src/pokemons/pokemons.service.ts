@@ -1,15 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Pokemon, Prisma } from '@prisma/client';
 
 @Injectable()
 export class PokemonsService {
-  create(createPokemonDto: CreatePokemonDto) {
-    return 'This action adds a new pokemon';
+
+  constructor(private prisma: PrismaService) {}
+
+  async createPokemon(data: CreatePokemonDto): Promise<Pokemon> {
+    return this.prisma.pokemon.create({
+      data,
+    });
   }
 
   findAll() {
-    return `This action returns all pokemons`;
+    return this.prisma.pokemon.findMany();
   }
 
   findOne(id: number) {

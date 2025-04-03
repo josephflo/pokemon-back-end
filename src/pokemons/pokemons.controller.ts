@@ -9,10 +9,10 @@ export class PokemonsController {
 
   @Post()
   create(@Body() createPokemonDto: CreatePokemonDto) {
-    return this.pokemonsService.create(createPokemonDto);
+    return this.pokemonsService.createPokemon(createPokemonDto);
   }
 
-  @Get("/all")
+  @Get()
   findAll() {
     return this.pokemonsService.findAll();
   }
