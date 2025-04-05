@@ -15,7 +15,8 @@ datasource db {
 
 model Pokemon {
   id        Int     @id @default(autoincrement())
-  name      String  @unique
-  type      String
-  level     Int
+  name            String @unique
+  height          Int
+  weight          Int
+  base_experience Int
 }

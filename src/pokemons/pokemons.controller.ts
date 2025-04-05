@@ -31,4 +31,7 @@ export class PokemonsController {
   remove(@Param('id') id: string) {
     return this.pokemonsService.remove(+id);
   }
+
+  
+  
 }
