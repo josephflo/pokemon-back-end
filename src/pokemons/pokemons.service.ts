@@ -1,4 +1,8 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -16,31 +20,62 @@ export class PokemonsService {
     });
   }
 
-  findAll() {
-    return this.prisma.pokemon.findMany();
-  }
+  // findAll() {
+  //   return this.prisma.pokemon.findMany();
+  // }
 
   async findOne(id: number) {
     const pokemon = await this.prisma.pokemon.findUnique({
       where: { id },
     });
-  
+
     if (!pokemon) {
       throw new NotFoundException(`There is no Pokémon with ID ${id}`);
     }
-  
+
     return pokemon;
   }
 
+  async findByIdOrName(search: string) {
+    const id = parseInt(search, 10);
+  
+    // Intentamos buscar por ID exacto
+    if (!isNaN(id)) {
+      const pokemonById = await this.prisma.pokemon.findUnique({
+        where: { id },
+      });
+      if (pokemonById) return pokemonById;
+    }
+  
+    // Buscar por nombre parcial (ordenado por nombre ascendente)
+    const pokemonsByName = await this.prisma.pokemon.findMany({
+      where: {
+        name: {
+          contains: search.toLowerCase(),
+          mode: 'insensitive',
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+  
+    if (pokemonsByName.length === 0) {
+      throw new NotFoundException(`No se encontraron Pokémons con "${search}"`);
+    }
+  
+    return pokemonsByName;
+  }
+  
   async update(id: number, updatePokemonDto: UpdatePokemonDto) {
     const existing = await this.prisma.pokemon.findUnique({
       where: { id },
     });
-  
+
     if (!existing) {
       throw new Error(`El Pokémon con ID ${id} no existe`);
     }
-  
+
     return this.prisma.pokemon.update({
       where: { id },
       data: updatePokemonDto,
@@ -51,11 +86,11 @@ export class PokemonsService {
     const existing = await this.prisma.pokemon.findUnique({
       where: { id },
     });
-  
+
     if (!existing) {
       throw new Error(`No existe el Pokémon con ID ${id}`);
     }
-  
+
     return this.prisma.pokemon.delete({
       where: { id },
     });
