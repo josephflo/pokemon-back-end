@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -20,24 +20,52 @@ export class PokemonsService {
     return this.prisma.pokemon.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} pokemon`;
+  async findOne(id: number) {
+    const pokemon = await this.prisma.pokemon.findUnique({
+      where: { id },
+    });
+  
+    if (!pokemon) {
+      throw new NotFoundException(`There is no Pokémon with ID ${id}`);
+    }
+  
+    return pokemon;
   }
 
-  update(id: number, updatePokemonDto: UpdatePokemonDto) {
-    return `This action updates a #${id} pokemon`;
+  async update(id: number, updatePokemonDto: UpdatePokemonDto) {
+    const existing = await this.prisma.pokemon.findUnique({
+      where: { id },
+    });
+  
+    if (!existing) {
+      throw new Error(`El Pokémon con ID ${id} no existe`);
+    }
+  
+    return this.prisma.pokemon.update({
+      where: { id },
+      data: updatePokemonDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} pokemon`;
+  async remove(id: number) {
+    const existing = await this.prisma.pokemon.findUnique({
+      where: { id },
+    });
+  
+    if (!existing) {
+      throw new Error(`No existe el Pokémon con ID ${id}`);
+    }
+  
+    return this.prisma.pokemon.delete({
+      where: { id },
+    });
   }
 
-  // 👇 NUEVO: Cuenta cuántos pokémon hay en la base de datos
+  // COUNT, IMPORT FROM API AND ADD TO POKEMONS DATABASE
   async countPokemons(): Promise<number> {
     return this.prisma.pokemon.count();
   }
 
-  // 👇 NUEVO: Importa desde la API externa
   async importFromApi(limit = 10, offset = 0): Promise<void> {
     const url = `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`;
     const { data } = await axios.get(url);
