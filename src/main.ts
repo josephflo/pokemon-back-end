@@ -14,7 +14,11 @@ async function bootstrap() {
   } else {
     console.log(`Ya hay ${existingCount} pokemons en la base de datos.`);
   }
-
+  app.enableCors(
+    {
+      origin: 'http://localhost:3000',
+    }
+  )
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
