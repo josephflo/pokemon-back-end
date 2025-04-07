@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -15,14 +16,22 @@ export class PokemonsService {
   constructor(private prisma: PrismaService) {}
 
   async createPokemon(data: CreatePokemonDto): Promise<Pokemon> {
-    return this.prisma.pokemon.create({
+    const existing = await this.prisma.pokemon.findUnique({
+      where: { name: data.name },
+    });
+  
+    if (existing) {
+      throw new ConflictException(`El nombre "${data.name}" ya está en uso.`);
+    }
+  
+    return await this.prisma.pokemon.create({
       data,
     });
   }
 
-  // findAll() {
-  //   return this.prisma.pokemon.findMany();
-  // }
+  findAll() {
+    return this.prisma.pokemon.findMany();
+  }
 
   async findOne(id: number) {
     const pokemon = await this.prisma.pokemon.findUnique({
@@ -38,7 +47,7 @@ export class PokemonsService {
 
   async findByIdOrName(search: string) {
     const id = parseInt(search, 10);
-  
+
     // Intentamos buscar por ID exacto
     if (!isNaN(id)) {
       const pokemonById = await this.prisma.pokemon.findUnique({
@@ -46,7 +55,7 @@ export class PokemonsService {
       });
       if (pokemonById) return pokemonById;
     }
-  
+
     // Buscar por nombre parcial (ordenado por nombre ascendente)
     const pokemonsByName = await this.prisma.pokemon.findMany({
       where: {
@@ -59,14 +68,14 @@ export class PokemonsService {
         name: 'asc',
       },
     });
-  
+
     if (pokemonsByName.length === 0) {
       throw new NotFoundException(`No se encontraron Pokémons con "${search}"`);
     }
-  
+
     return pokemonsByName;
   }
-  
+
   async update(id: number, updatePokemonDto: UpdatePokemonDto) {
     const existing = await this.prisma.pokemon.findUnique({
       where: { id },
@@ -94,6 +103,14 @@ export class PokemonsService {
     return this.prisma.pokemon.delete({
       where: { id },
     });
+  }
+
+  async isNameAvailable(name: string): Promise<boolean> {
+    const existing = await this.prisma.pokemon.findUnique({
+      where: { name },
+    });
+  
+    return !existing;
   }
 
   // COUNT, IMPORT FROM API AND ADD TO POKEMONS DATABASE
