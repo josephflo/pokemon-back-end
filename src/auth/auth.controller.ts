@@ -1,34 +1,56 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { UsersService } from '../users/users.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import * as bcrypt from 'bcrypt';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Post('register')
+  async register(@Body() registerDto: RegisterDto) {
+    const { email, password } = registerDto;
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await this.usersService.create({
+      email,
+      password: hashedPassword,
+    });
+
+    return {
+      message: 'Usuario registrado correctamente',
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    };
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
-  }
+  @Post('login')
+  async login(@Body() loginDto: LoginDto) {
+    const { email, password } = loginDto;
+    const user = await this.usersService.findByEmail(email);
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
+    if (!user) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    const token = await this.authService.login(user);
+
+    return {
+      message: 'Login exitoso',
+      token,
+    };
   }
 }

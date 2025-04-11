@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PokemonsService } from './pokemons/pokemons.service';
+import { ValidationPipe } from '@nestjs/common';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  app.useGlobalPipes(new ValidationPipe());
   const pokemonsService = app.get(PokemonsService);
 
   const existingCount = await pokemonsService.countPokemons();
