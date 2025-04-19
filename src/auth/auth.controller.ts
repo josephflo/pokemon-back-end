@@ -15,11 +15,11 @@ export class AuthController {
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     const { email, password } = registerDto;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.usersService.create({
       email,
-      password: hashedPassword,
+      password,
     });
 
     return {
@@ -35,10 +35,14 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) {
     const { email, password } = loginDto;
     const user = await this.usersService.findByEmail(email);
+    console.log('Ingresado:', password);
 
     if (!user) {
-      throw new UnauthorizedException('No hay usuario con ese correo registrado');
+      throw new UnauthorizedException(
+        'No hay usuario con ese correo registrado',
+      );
     }
+    console.log('En DB:', user.password);
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
